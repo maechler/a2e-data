@@ -5,6 +5,7 @@
 .DS_Store
 
 /data/archive
+/data/*.csv
 
 /config/*
 !/config/config.dist.yaml

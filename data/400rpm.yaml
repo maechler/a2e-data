@@ -1,0 +1,15 @@
+data:
+  path: ./data/400rpm.csv
+  index_column: timestamp
+windows:
+  train:
+    start: 2020-08-26T07:00:00.000Z
+    end: 2020-08-26T11:00:00.000Z
+  test_healthy:
+    start: 2020-08-26T11:00:00.000Z
+    end: 2020-08-26T11:15:00.000Z
+  test_anomalous:
+    start: 2020-08-26T11:15:00.000Z
+    end: 2020-08-26T11:30:00.000Z
+plot:
+  title: 400 RPM

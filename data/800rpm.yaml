@@ -1,0 +1,15 @@
+data:
+  path: ./data/800rpm.csv
+  index_column: timestamp
+windows:
+  train:
+    start: 2020-08-27T08:00:00.000Z
+    end: 2020-08-27T12:00:00.000Z
+  test_healthy:
+    start: 2020-08-27T12:00:00.000Z
+    end: 2020-08-27T12:15:00.000Z
+  test_anomalous:
+    start: 2020-08-27T12:15:00.000Z
+    end: 2020-08-27T12:30:00.000Z
+plot:
+  title: 800 RPM

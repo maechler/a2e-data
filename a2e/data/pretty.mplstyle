@@ -1,0 +1,25 @@
+# general
+font.size: 14
+
+# colors
+axes.prop_cycle: cycler('color', ['3B90C3', 'D4373E', '3BCB69', 'FFA039', '7D11CD', 'DC72FF'])
+patch.facecolor: 3B90C3
+
+#axes.prop_cycle: cycler('color', ['648ed4', '89c77c', 'd27b75', 'e79c67'])
+#patch.facecolor: 648ed4
+
+# grid
+axes.grid: True
+grid.linestyle: dotted
+grid.color: b0b0b0
+grid.alpha: 0.5
+grid.linewidth: 0.8
+
+# legend
+legend.frameon: False
+legend.loc: best
+
+# save figure
+savefig.dpi: 600
+savefig.bbox: tight
+savefig.pad_inches: 0.1

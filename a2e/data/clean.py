@@ -61,7 +61,7 @@ class Cleaner:
     def clip(self, data_frame: DataFrame):
         print('clip: start clipping dataset')
         start_datetime = self.get_config('windows', 'train', 'start')
-        end_datetime = self.get_config('windows', 'test_anomolous', 'end')
+        end_datetime = self.get_config('windows', 'test_anomalous', 'end')
 
         data_frame_too_early = data_frame[data_frame.index < start_datetime]
         data_frame_too_late = data_frame[data_frame.index > end_datetime]

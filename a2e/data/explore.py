@@ -6,11 +6,10 @@ import yaml
 import argparse
 import matplotlib.dates as mdates
 from argparse import Namespace
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pandas import DataFrame
 import ntpath
-from pprint import pprint
-from a2e.data.utility import get_recursive_config
+from a2e.data.utility import get_recursive_config, str2bool
 from tabulate import tabulate
 
 
@@ -59,6 +58,7 @@ class Explorer:
         plt.style.use(style_path)
 
         self.run_overview()
+        self.run_closeup()
         self.run_fft_alpha()
         self.run_fft_median()
         self.run_std()
@@ -68,7 +68,7 @@ class Explorer:
         if args.show_plots:
             plt.show()
 
-    def plot(self, x, y, ylabel, xlabel='time [h]', time_format=True, title=None, ylim=None, color=None, show_screw_tightened=False):
+    def plot(self, x, y, ylabel, xlabel='time [h]', time_format=True, title=None, xlim=None, ylim=None, color=None, show_screw_tightened=False):
         fig, ax = plt.subplots()
         color = self.colors['blue'] if color is None else color
 
@@ -86,8 +86,11 @@ class Explorer:
         ax.set_xlabel(xlabel, labelpad=15)
         ax.set_ylabel(ylabel, labelpad=15)
 
-        #if title is not None:
-        #    ax.set_title(self.get_plot_title(title))
+        if title is not None:
+            ax.set_title(self.get_plot_title(title))
+
+        if xlim is not None:
+            ax.set_xlim(xlim)
 
         if ylim is not None:
             ax.set_ylim(ylim)
@@ -97,10 +100,71 @@ class Explorer:
         self.save_figure(fig, title)
 
     def run_overview(self):
-        self.plot(self.data_frame.index, self.data_frame['rms'], title='RMS', color=self.colors['blue'], ylim=[0, 2], ylabel='RMS', show_screw_tightened=True)
-        self.plot(self.data_frame.index, self.data_frame['crest'], title='CREST', color=self.colors['green'], ylim=None, ylabel='CREST', show_screw_tightened=True)
-        self.plot(self.data_frame.index, self.data_frame['temperature'], title='Temperature', color=self.colors['orange'], ylim=None, ylabel='Temperature [°C]', show_screw_tightened=True)
-        self.plot(self.data_frame.index, self.data_frame['rpm'], title='RPM', color=self.colors['purple'], ylim=None, ylabel='RPM', show_screw_tightened=True)
+        self.plot(
+            self.data_frame.index,
+            self.data_frame['rms'],
+            title='RMS',
+            color=self.colors['blue'],
+            ylim=self.get_config('plot', 'rms', 'ylim', default=None),
+            ylabel='RMS',
+            show_screw_tightened=True
+        )
+
+        self.plot(
+            self.data_frame.index,
+            self.data_frame['crest'],
+            title='CREST',
+            color=self.colors['green'],
+            ylim=self.get_config('plot', 'crest', 'ylim', default=None),
+            ylabel='CREST',
+            show_screw_tightened=True
+        )
+
+        self.plot(
+            self.data_frame.index,
+            self.data_frame['temperature'],
+            title='Temperature',
+            color=self.colors['orange'],
+            ylim=self.get_config('plot', 'temperature', 'ylim', default=None),
+            ylabel='Temperature [°C]',
+            show_screw_tightened=True
+        )
+
+        self.plot(
+            self.data_frame.index,
+            self.data_frame['rpm'],
+            title='RPM',
+            color=self.colors['purple'],
+            ylim=self.get_config('plot', 'rpm', 'ylim', default=None),
+            ylabel='RPM',
+            show_screw_tightened=True
+        )
+
+    def run_closeup(self):
+        anomalous_start = self.get_config('windows', 'test_anomalous', 'start')
+        xlim_start = anomalous_start - timedelta(minutes=1)
+        xlim_end = anomalous_start + timedelta(minutes=1)
+
+        self.plot(
+            self.data_frame.index,
+            self.data_frame['rms'],
+            title='RMS (close)',
+            color=self.colors['blue'],
+            xlim=[xlim_start, xlim_end],
+            ylim=self.get_config('plot', 'rms', 'ylim', default=None),
+            ylabel='RMS',
+            show_screw_tightened=True,
+        )
+
+        self.plot(
+            self.data_frame.index,
+            self.data_frame['crest'],
+            title='CREST (close)',
+            color=self.colors['green'],
+            xlim=[xlim_start, xlim_end],
+            ylabel='CREST',
+            show_screw_tightened=True
+        )
 
     def get_plot_title(self, plot_title):
         title = self.get_config('plot', 'title')
@@ -156,8 +220,7 @@ class Explorer:
                 ffts.append(fft)
 
                 ax.plot(x, fft, alpha=alpha, color=self.colors['green'])
-                #ax.set_xlim([xmin, xmax])
-                #ax.set_ylim([0, 1.2])
+                ax.set_ylim(self.get_config('plot', 'fft', 'ylim', default=[]))
 
             if self.args.save_plots:
                 self.save_figure(fig, 'fft_alpha_' + config['title'])
@@ -188,7 +251,15 @@ class Explorer:
             plot_data_frame = DataFrame()
             plot_data_frame['fft_median'] = fft_data_frame.median(axis=0)
 
-            self.plot(plot_data_frame.index, plot_data_frame['fft_median'], xlabel='Frequency [Hz]', ylabel='Amplitude', title=f'FFT median ({title})', time_format=False)
+            self.plot(
+                plot_data_frame.index,
+                plot_data_frame['fft_median'],
+                xlabel='Frequency [Hz]',
+                ylabel='Amplitude',
+                title=f'FFT median ({title})',
+                ylim=self.get_config('plot', 'fft', 'ylim', default=None),
+                time_format=False
+            )
 
     def run_std(self):
         columns = ['rms', 'crest']
@@ -236,8 +307,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--config', help='Path to a YAML file describing the dataset.', type=str, required=True)
-    parser.add_argument('--show_plots', help='Whether to show plots or not.', type=bool, default=True)
-    parser.add_argument('--save_plots', help='Whether to save plots to file system or not.', type=bool, default=True)
+    parser.add_argument('--show_plots', help='Whether to show plots or not.', type=str2bool, default=True)
+    parser.add_argument('--save_plots', help='Whether to save plots to file system or not.', type=str2bool, default=True)
 
     args = parser.parse_args()
     explorer = Explorer(args)

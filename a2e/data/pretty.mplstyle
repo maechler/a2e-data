@@ -1,5 +1,6 @@
 # general
 font.size: 14
+font.family: Roboto
 
 # colors
 axes.prop_cycle: cycler('color', ['3B90C3', 'D4373E', '3BCB69', 'FFA039', '7D11CD', 'DC72FF'])

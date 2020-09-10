@@ -13,3 +13,19 @@ windows:
     end: 2020-08-27T12:30:00.000Z
 plot:
   title: 800 RPM
+  fft:
+    ylim:
+      - 0
+      - 1
+  rpm:
+    ylim:
+      - 0
+      - 1500
+  crest:
+    ylim:
+      - 0
+      - 25
+  rms:
+    ylim:
+      - 0
+      - 2

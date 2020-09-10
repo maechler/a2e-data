@@ -1,3 +1,4 @@
+import argparse
 from datetime import datetime, timezone
 
 
@@ -16,3 +17,12 @@ def get_recursive_config(config: dict, *args, **kwargs):
                 return kwargs['default']
 
     return config
+
+
+def str2bool(value: str) -> bool:
+    if value.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif value.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError(f'Unexpected string "{value}" that cannot be converted to a boolean.')

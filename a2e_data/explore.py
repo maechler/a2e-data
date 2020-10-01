@@ -9,7 +9,7 @@ from argparse import Namespace
 from datetime import datetime, timezone, timedelta
 from pandas import DataFrame
 import ntpath
-from a2e.data.utility import get_recursive_config, str2bool
+from a2e_data.utility import get_recursive_config, str2bool
 from tabulate import tabulate
 
 
@@ -36,14 +36,14 @@ class Explorer:
         self.run_id = ntpath.basename(args.config)
         self.out_folder = os.path.abspath(os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
-            '../../out',
+            '../out',
             self.__class__.__name__.lower(),
             Path(args.config).resolve().stem,
         ))
         self.stats = {}
         self.rolling_window_size = 600
         self.fft_alpha_number_of_samples = 100
-        self.stats_data_frame = DataFrame({'overall': [], 'healthy': [], 'anomalous': []})
+        self.stats_data_frame = DataFrame({'metric': [], 'overall': [], 'healthy': [], 'anomalous': []})
 
         with open(self.args.config) as config_file:
             self.config = yaml.load(config_file, Loader=yaml.FullLoader)
@@ -220,16 +220,36 @@ class Explorer:
                 ffts.append(fft)
 
                 ax.plot(x, fft, alpha=alpha, color=self.colors['green'])
-                ax.set_ylim(self.get_config('plot', 'fft', 'ylim', default=[]))
+                ax.set_ylim(self.get_config('plot', 'fft', 'ylim', default=None))
 
             if self.args.save_plots:
                 self.save_figure(fig, 'fft_alpha_' + config['title'])
 
     def run_fft_median(self):
+        data_frame_start = self.data_frame_healthy.index[0]
+        data_frame_end = self.data_frame_healthy.index[-1]
+        data_frame_delta = data_frame_end - data_frame_start
+        data_frame_delta_quarter = data_frame_delta / 4
         plot_config = [
             {
                 'data_frame': self.data_frame_healthy,
-                'title': 'healthy'
+                'title': 'healthy-all'
+            },
+            {
+                'data_frame': self.data_frame_healthy.loc[data_frame_start:data_frame_start + data_frame_delta_quarter],
+                'title': 'healthy-1'
+            },
+            {
+                'data_frame': self.data_frame_healthy.loc[data_frame_start + data_frame_delta_quarter:data_frame_start + 2*data_frame_delta_quarter],
+                'title': 'healthy-2'
+            },
+            {
+                'data_frame': self.data_frame_healthy.loc[data_frame_start + 2*data_frame_delta_quarter:data_frame_start + 3*data_frame_delta_quarter],
+                'title': 'healthy-3'
+            },
+            {
+                'data_frame': self.data_frame_healthy.loc[data_frame_start + 3*data_frame_delta_quarter:data_frame_start + 4*data_frame_delta_quarter],
+                'title': 'healthy-4'
             },
             {
                 'data_frame': self.data_frame_anomalous,

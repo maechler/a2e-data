@@ -6,7 +6,7 @@ import yaml
 from argparse import Namespace
 import pandas as pd
 from pandas import DataFrame
-from a2e.data.utility import timestamp_to_date_time, get_recursive_config
+from a2e_data.utility import timestamp_to_date_time, get_recursive_config
 
 
 class Cleaner:
@@ -15,7 +15,7 @@ class Cleaner:
         self.args = args
         self.out_folder = os.path.abspath(os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
-            '../../out',
+            '../out',
             self.__class__.__name__.lower(),
             Path(args.config).resolve().stem,
         ))
@@ -41,17 +41,16 @@ class Cleaner:
             delimiter=self.get_config('data', 'delimiter', default=','),
         )
 
-        if self.args.shift is not None:
-            self.shift(data_frame, self.args.shift)
-
-        data_frame.set_index(self.get_config('data', 'index_column'), inplace=True)
-
         if self.args.clip:
             self.clip(data_frame)
+
+        if self.args.shift is not None:
+            self.shift(data_frame, self.args.shift)
 
         if self.args.dry:
             pass
         else:
+            data_frame.set_index(self.get_config('data', 'index_column'), inplace=True)
             out_path = os.path.join(self.out_folder, Path(self.get_config('data', 'path')).resolve().stem + '.csv')
             print(f'main: writing data to "{str(out_path)}"')
             data_frame.to_csv(out_path, date_format='%s.%f')
@@ -62,9 +61,10 @@ class Cleaner:
         print('clip: start clipping dataset')
         start_datetime = self.get_config('windows', 'train', 'start')
         end_datetime = self.get_config('windows', 'test_anomalous', 'end')
+        index_column = self.get_config('data', 'index_column')
 
-        data_frame_too_early = data_frame[data_frame.index < start_datetime]
-        data_frame_too_late = data_frame[data_frame.index > end_datetime]
+        data_frame_too_early = data_frame[data_frame[index_column] < start_datetime]
+        data_frame_too_late = data_frame[data_frame[index_column] > end_datetime]
 
         print(f'clip: clipping {len(data_frame_too_early.index)} rows at the beginning of the dataset.')
         data_frame.drop(data_frame_too_early.index, axis=0, inplace=True)
@@ -72,19 +72,21 @@ class Cleaner:
         print(f'clip: clipping {len(data_frame_too_late.index)} rows at the end of the dataset.')
         data_frame.drop(data_frame_too_late.index, axis=0, inplace=True)
 
-        print(f'clip: dataset clipped to {str(data_frame.index[0])} - {str(data_frame.index[-1])}')
+        data_frame.reset_index(drop=True, inplace=True)
+
+        print(f'clip: dataset clipped to {str(data_frame.iloc[0][index_column])} - {str(data_frame.iloc[-1][index_column])}')
 
     def shift(self, data_frame: DataFrame, target_start):
         print('shift: start dataset shifting')
 
-        data_frame_start_timestamp = data_frame['timestamp'][0]
+        index_column = self.get_config('data', 'index_column')
+        data_frame_start_timestamp = data_frame[index_column][0]
         target_start_timestamp = datetime.fromisoformat(target_start)
         timestamp_delta = pd.Timedelta(data_frame_start_timestamp - target_start_timestamp)
-        index_column = self.get_config('data', 'index_column')
 
         if timestamp_delta.seconds > 0:
             data_frame[index_column] = data_frame[index_column].apply(lambda x: x - timestamp_delta)
-            print(f'shift: dataset start shifted to {str(data_frame["timestamp"][0])}')
+            print(f'shift: dataset start shifted to {str(data_frame.iloc[0][index_column])}')
         else:
             print('shift: no time shift necessary')
 
@@ -94,7 +96,7 @@ class Cleaner:
     def to_absolute_path(self, path):
         return os.path.abspath(os.path.join(
             Path(__file__).resolve().parent,
-            '../..',
+            '..',
             path
         ))
 

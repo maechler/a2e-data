@@ -55,7 +55,7 @@ class Cleaner:
             data_frame.set_index(self.get_config('data', 'index_column'), inplace=True)
             out_path = os.path.join(self.out_folder, Path(self.get_config('data', 'path')).resolve().stem + '.csv')
             print(f'main: writing data to "{str(out_path)}"')
-            data_frame.to_csv(out_path, date_format='%s.%f')
+            data_frame.to_csv(out_path, date_format='%s.%f', float_format='%.8f')
 
         print('main: finished')
 

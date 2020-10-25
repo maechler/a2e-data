@@ -41,6 +41,8 @@ class Cleaner:
             delimiter=self.get_config('data', 'delimiter', default=','),
         )
 
+        self.expand_fft(data_frame)
+
         if self.args.clip:
             self.clip(data_frame)
 
@@ -56,6 +58,30 @@ class Cleaner:
             data_frame.to_csv(out_path, date_format='%s.%f')
 
         print('main: finished')
+
+    def expand_fft(self, data_frame: DataFrame):
+        if 'fft_magnitude' not in data_frame:
+            return
+
+        fft_by_frequency = {}
+
+        for index, row in data_frame.iterrows():
+            fft_values = map(float, row['fft_magnitude'].split(','))
+
+            for fft_row_index, fft_value in enumerate(fft_values, start=1):
+                fft_key = f'fft_{fft_row_index}'
+
+                if fft_key not in fft_by_frequency:
+                    fft_by_frequency[fft_key] = []
+
+                fft_by_frequency[fft_key].append(fft_value)
+
+        del data_frame['fft_magnitude']
+        del data_frame['fft_start_frequency']
+        del data_frame['fft_end_frequency']
+
+        for frequency in fft_by_frequency:
+            data_frame[frequency] = fft_by_frequency[frequency]
 
     def clip(self, data_frame: DataFrame):
         print('clip: start clipping dataset')

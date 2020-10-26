@@ -63,6 +63,7 @@ class Explorer:
         self.run_fft_median()
         self.run_std()
         self.run_mean()
+        self.run_data_collection_stats()
         self.print_stats()
 
         if args.show_plots:
@@ -304,6 +305,36 @@ class Explorer:
             self.data_frame[f'rolling_mean_{column}'] = self.data_frame[column].rolling(window=self.rolling_window_size).mean()
 
             self.plot(self.data_frame.index, self.data_frame[f'rolling_mean_{column}'], ylabel=column, title=f'Mean {column}', show_screw_tightened=True)
+
+    def run_data_collection_stats(self):
+        total_values = len(self.data_frame.index)
+        start_date = self.data_frame.index[0]
+        end_date = self.data_frame.index[-1]
+        total_seconds = (end_date - start_date).total_seconds()
+        computed_frequency = "{:.2f}%".format(total_values / total_seconds)
+
+        grouped_rms_values = len(self.data_frame.groupby(['rms']))
+        duplicated_rms_rows = total_values - grouped_rms_values
+        duplicated_rms_percentage = "{:.2f}%".format((duplicated_rms_rows / total_values) * 100)
+
+        grouped_crest_values = len(self.data_frame.groupby(['crest']))
+        duplicated_crest_rows = total_values - grouped_crest_values
+        duplicated_crest_percentage = "{:.2f}%".format((grouped_crest_values / total_values) * 100)
+
+        grouped_fft_values = len(self.data_frame.groupby(['fft_1', 'fft_2', 'fft_3']))
+        duplicated_fft_rows = total_values - grouped_fft_values
+        duplicated_fft_percentage = "{:.2f}%".format((grouped_fft_values / total_values) * 100)
+
+        with open(os.path.join(self.out_folder, 'data_collection_stats.txt'), 'w') as file:
+            file.write(f'Total seconds: {total_seconds} \n')
+            file.write(f'Total rows: {total_values} \n')
+            file.write(f'Computed ferquency: {computed_frequency}Hz \n')
+            file.write(f'Duplicated RMS rows: {duplicated_rms_rows} \n')
+            file.write(f'Duplicated RMS percentage: {duplicated_rms_percentage} \n')
+            file.write(f'Duplicated CREST rows: {duplicated_crest_rows} \n')
+            file.write(f'Duplicated CREST percentage: {duplicated_crest_percentage} \n')
+            file.write(f'Duplicated FFT rows: {duplicated_fft_rows} \n')
+            file.write(f'Duplicated FFT percentage: {duplicated_fft_percentage} \n')
 
     def save_figure(self, figure, filename):
         sanitized_filename = filename.lower().replace(' ', '_').replace('(', '').replace(')', '')

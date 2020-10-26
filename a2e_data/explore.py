@@ -306,7 +306,7 @@ class Explorer:
             self.plot(self.data_frame.index, self.data_frame[f'rolling_mean_{column}'], ylabel=column, title=f'Mean {column}', show_screw_tightened=True)
 
     def save_figure(self, figure, filename):
-        sanitized_filename = filename.lower().replace(' ', '_')
+        sanitized_filename = filename.lower().replace(' ', '_').replace('(', '').replace(')', '')
 
         figure.savefig(os.path.join(self.out_folder, sanitized_filename + '.pdf'), format='pdf')
         figure.savefig(os.path.join(self.out_folder, sanitized_filename + '.png'), format='png')

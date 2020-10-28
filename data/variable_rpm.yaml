@@ -1,0 +1,24 @@
+data:
+  path: ./data/variable_rpm.csv
+  index_column: timestamp
+  md5_hash: 5e4623a03a24ea0b1962260ed5823be0
+windows:
+  train:
+    start: 2020-09-09T08:00:00.000Z
+    end: 2020-09-09T16:00:00.000Z
+  test_healthy:
+    start: 2020-09-09T16:00:00.000Z
+    end: 2020-09-09T16:45:00.000Z
+  test_anomalous:
+    start: 2020-09-09T16:45:00.000Z
+    end: 2020-09-09T17:00:00.000Z
+plot:
+  title: Variable RPM
+  fft:
+    ylim: [0, 1]
+  rpm:
+    ylim: [0, 1500]
+  crest:
+    ylim: [0, 25]
+  rms:
+    ylim: [0, 7]

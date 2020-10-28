@@ -1,0 +1,13 @@
+data:
+  path: ./data/raw/800rpm.csv
+  index_column: timestamp
+windows:
+  train:
+    start: 2020-08-27T06:15:00.000Z
+    end: 2020-08-27T10:15:00.000Z
+  test_healthy:
+    start: 2020-08-27T10:15:00.000Z
+    end: 2020-08-27T10:30:00.000Z
+  test_anomalous:
+    start: 2020-08-27T10:30:00.000Z
+    end: 2020-08-27T10:45:00.000Z

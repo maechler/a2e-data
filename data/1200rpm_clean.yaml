@@ -1,0 +1,13 @@
+data:
+  path: ./data/raw/1200rpm.csv
+  index_column: timestamp
+windows:
+  train:
+    start: 2020-09-02T12:20:00.000Z
+    end: 2020-09-02T16:20:00.000Z
+  test_healthy:
+    start: 2020-09-02T16:20:00.000Z
+    end: 2020-09-02T16:35:00.000Z
+  test_anomalous:
+    start: 2020-09-02T16:35:00.000Z
+    end: 2020-09-02T16:50:00.000Z

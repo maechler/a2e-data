@@ -1,0 +1,13 @@
+data:
+  path: ./data/raw/variable_rpm.csv
+  index_column: timestamp
+windows:
+  train:
+    start: 2020-09-09T06:30:00.000Z
+    end: 2020-09-09T14:30:00.000Z
+  test_healthy:
+    start: 2020-09-09T14:30:00.000Z
+    end: 2020-09-09T15:15:00.000Z
+  test_anomalous:
+    start: 2020-09-09T15:15:00.000Z
+    end: 2020-09-09T15:30:00.000Z

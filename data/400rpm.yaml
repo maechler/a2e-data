@@ -1,31 +1,24 @@
 data:
   path: ./data/400rpm.csv
   index_column: timestamp
+  md5_hash: d352ee6601fd948ce4a8527564e6c450
 windows:
   train:
-    start: 2020-08-26T07:00:00.000Z
-    end: 2020-08-26T11:00:00.000Z
+    start: 2020-09-30T08:00:00.000Z
+    end: 2020-09-30T12:00:00.000Z
   test_healthy:
-    start: 2020-08-26T11:00:00.000Z
-    end: 2020-08-26T11:15:00.000Z
+    start: 2020-09-30T12:00:00.000Z
+    end: 2020-09-30T12:15:00.000Z
   test_anomalous:
-    start: 2020-08-26T11:15:00.000Z
-    end: 2020-08-26T11:30:00.000Z
+    start: 2020-09-30T12:15:00.000Z
+    end: 2020-09-30T12:30:00.000Z
 plot:
   title: 400 RPM
   fft:
-    ylim:
-      - 0
-      - 1
+    ylim: [0, 1]
   rpm:
-    ylim:
-      - 0
-      - 1500
+    ylim: [0, 1500]
   crest:
-    ylim:
-      - 0
-      - 25
+    ylim: [0, 25]
   rms:
-    ylim:
-      - 0
-      - 2
+    ylim: [0, 7]

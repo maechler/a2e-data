@@ -1,6 +1,7 @@
 data:
   path: ./data/800rpm.csv
   index_column: timestamp
+  md5_hash: 5694c7b13a5c04ee07cf2df4d5acec94
 windows:
   train:
     start: 2020-08-27T08:00:00.000Z
@@ -14,18 +15,10 @@ windows:
 plot:
   title: 800 RPM
   fft:
-    ylim:
-      - 0
-      - 1
+    ylim: [0, 1]
   rpm:
-    ylim:
-      - 0
-      - 1500
+    ylim: [0, 1500]
   crest:
-    ylim:
-      - 0
-      - 25
+    ylim: [0, 25]
   rms:
-    ylim:
-      - 0
-      - 2
+    ylim: [0, 7]

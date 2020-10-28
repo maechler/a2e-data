@@ -215,8 +215,8 @@ class Explorer:
             ffts = []
 
             for start in range(0, number_of_samples):
-                df_subset = data_frame.iloc[start]
-                fft = list(map(float, (df_subset['fft_magnitude'].split(','))))
+                df_subset = data_frame.iloc[:, 4:].iloc[start]
+                fft = list(df_subset)
                 x = list(range(len(fft)))
                 ffts.append(fft)
 
@@ -263,8 +263,8 @@ class Explorer:
             title = config['title']
             fft_list = []
 
-            for index, row in data_frame.iterrows():
-                fft = list(map(float, (row['fft_magnitude'].split(','))))
+            for index, row in data_frame.iloc[:, 4:].iterrows():
+                fft = list(row)
                 fft_list.append(fft)
 
             fft_data_frame = DataFrame(fft_list)
@@ -311,7 +311,7 @@ class Explorer:
         start_date = self.data_frame.index[0]
         end_date = self.data_frame.index[-1]
         total_seconds = (end_date - start_date).total_seconds()
-        computed_frequency = "{:.2f}%".format(total_values / total_seconds)
+        computed_frequency = "{:.2f}Hz".format(total_values / total_seconds)
 
         grouped_rms_values = len(self.data_frame.groupby(['rms']))
         duplicated_rms_rows = total_values - grouped_rms_values
@@ -319,16 +319,16 @@ class Explorer:
 
         grouped_crest_values = len(self.data_frame.groupby(['crest']))
         duplicated_crest_rows = total_values - grouped_crest_values
-        duplicated_crest_percentage = "{:.2f}%".format((grouped_crest_values / total_values) * 100)
+        duplicated_crest_percentage = "{:.2f}%".format((duplicated_crest_rows / total_values) * 100)
 
         grouped_fft_values = len(self.data_frame.groupby(['fft_1', 'fft_2', 'fft_3']))
         duplicated_fft_rows = total_values - grouped_fft_values
-        duplicated_fft_percentage = "{:.2f}%".format((grouped_fft_values / total_values) * 100)
+        duplicated_fft_percentage = "{:.2f}%".format((duplicated_fft_rows / total_values) * 100)
 
         with open(os.path.join(self.out_folder, 'data_collection_stats.txt'), 'w') as file:
             file.write(f'Total seconds: {total_seconds} \n')
             file.write(f'Total rows: {total_values} \n')
-            file.write(f'Computed ferquency: {computed_frequency}Hz \n')
+            file.write(f'Computed ferquency: {computed_frequency} \n')
             file.write(f'Duplicated RMS rows: {duplicated_rms_rows} \n')
             file.write(f'Duplicated RMS percentage: {duplicated_rms_percentage} \n')
             file.write(f'Duplicated CREST rows: {duplicated_crest_rows} \n')
@@ -339,13 +339,12 @@ class Explorer:
     def save_figure(self, figure, filename):
         sanitized_filename = filename.lower().replace(' ', '_').replace('(', '').replace(')', '')
 
-        figure.savefig(os.path.join(self.out_folder, sanitized_filename + '.pdf'), format='pdf')
         figure.savefig(os.path.join(self.out_folder, sanitized_filename + '.png'), format='png')
 
     def print_stats(self):
         print(tabulate(self.stats_data_frame, headers='keys', tablefmt='psql'))
 
-        self.stats_data_frame.to_csv(os.path.join(self.out_folder, 'stats.csv'))
+        self.stats_data_frame.to_csv(os.path.join(self.out_folder, 'computed_stats.csv'))
 
     def save_stats(self):
         pass

@@ -258,6 +258,16 @@ class Explorer:
             },
         ]
 
+        for rpm in self.get_config('plot', 'fft', 'rpm_plots', default=[]):
+            plot_config.append({
+                'data_frame': self.data_frame_healthy[self.data_frame_healthy.rpm == rpm],
+                'title': f'healthy-{rpm}-rpm',
+            })
+            plot_config.append({
+                'data_frame': self.data_frame_anomalous[self.data_frame_anomalous.rpm == rpm],
+                'title': f'anomalous-{rpm}-rpm',
+            })
+
         for config in plot_config:
             data_frame = config['data_frame']
             title = config['title']

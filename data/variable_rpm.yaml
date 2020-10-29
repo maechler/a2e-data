@@ -16,6 +16,7 @@ plot:
   title: Variable RPM
   fft:
     ylim: [0, 1]
+    rpm_plots: [0, 400, 800, 1200]
   rpm:
     ylim: [0, 1500]
   crest:

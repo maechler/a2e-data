@@ -1,5 +1,6 @@
 /.idea
 /env
+*.egg-info/
 
 *.pyc
 .DS_Store

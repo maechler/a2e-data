@@ -30,8 +30,7 @@ class Explorer:
     def __init__(self, args: Namespace):
         self.args = args
         self.data_frame = None
-        self.data_frame_healthy = None
-        self.data_frame_anomalous = None
+        self.windows = {}
         self.config = None
         self.run_id = ntpath.basename(args.config)
         self.out_folder = os.path.abspath(os.path.join(
@@ -43,7 +42,8 @@ class Explorer:
         self.stats = {}
         self.rolling_window_size = 600
         self.fft_alpha_number_of_samples = 100
-        self.stats_data_frame = DataFrame({'metric': [], 'overall': [], 'healthy': [], 'anomalous': []})
+        self.stats_data_frame = DataFrame()
+        self.show_plots = self.args.show_plots
 
         with open(self.args.config) as config_file:
             self.config = yaml.load(config_file, Loader=yaml.FullLoader)
@@ -59,17 +59,16 @@ class Explorer:
 
         self.run_overview()
         self.run_closeup()
-        self.run_fft_alpha()
         self.run_fft_median()
         self.run_std()
         self.run_mean()
         self.run_data_collection_stats()
         self.print_stats()
 
-        if args.show_plots:
+        if self.show_plots:
             plt.show()
 
-    def plot(self, x, y, ylabel, xlabel='time [h]', time_format=True, title=None, xlim=None, ylim=None, color=None, show_screw_tightened=False):
+    def plot(self, x, y, ylabel, xlabel='time [h]', time_format=True, title=None, xlim=None, ylim=None, color=None, show_screw_tightened=False, filename=None):
         fig, ax = plt.subplots()
         color = self.colors['blue'] if color is None else color
 
@@ -82,7 +81,9 @@ class Explorer:
 
         if show_screw_tightened:
             anomalous_start = self.get_config('windows', 'test_anomalous', 'start')
-            ax.axvline(x=anomalous_start, color=self.colors['red'], linestyle='solid', label=self.labels['screw_tightened'])
+
+            if x[0] < anomalous_start < x[-1]:
+                ax.axvline(x=anomalous_start, color=self.colors['red'], linestyle='solid', label=self.labels['screw_tightened'])
 
         ax.set_xlabel(xlabel, labelpad=15)
         ax.set_ylabel(ylabel, labelpad=15)
@@ -98,7 +99,10 @@ class Explorer:
 
         ax.legend()
 
-        self.save_figure(fig, title)
+        self.save_figure(fig, title if filename is None else filename)
+
+        if not self.show_plots:
+            plt.close()
 
     def run_overview(self):
         self.plot(
@@ -177,144 +181,91 @@ class Explorer:
         csv_file_path = self.get_config('data', 'path')
         index_column = self.get_config('data', 'index_column')
 
-        data_frame = pd.read_csv(csv_file_path, parse_dates=[index_column], date_parser=parse_date_time, quotechar='"', delimiter=',', sep=',')
-        data_frame.set_index(index_column, inplace=True)
+        self.data_frame = pd.read_csv(csv_file_path, parse_dates=[index_column], date_parser=parse_date_time, quotechar='"', delimiter=',', sep=',')
+        self.data_frame.set_index(index_column, inplace=True)
 
-        healthy_start = self.get_config('windows', 'train', 'start')
-        healthy_end = self.get_config('windows', 'train', 'end')
-        healthy_mask = (data_frame.index > healthy_start) & (data_frame.index <= healthy_end)
+        for window_key, window_config in self.get_config('windows', default={}).items():
+            window_start = window_config['start']
+            window_end = window_config['end']
+            window_mask = (self.data_frame.index > window_start) & (self.data_frame.index <= window_end)
 
-        anomalous_start = self.get_config('windows', 'test_anomalous', 'start')
-        anomalous_end = self.get_config('windows', 'test_anomalous', 'end')
-        anomalous_mask = (data_frame.index > anomalous_start) & (data_frame.index <= anomalous_end)
-
-        self.data_frame = data_frame
-        self.data_frame_healthy = data_frame.loc[healthy_mask]
-        self.data_frame_anomalous = data_frame.loc[anomalous_mask]
-
-    def run_fft_alpha(self):
-        plot_config = [
-            {
-                'data_frame': self.data_frame_healthy,
-                'title': 'healthy'
-            },
-            {
-                'data_frame': self.data_frame_anomalous,
-                'title': 'anomalous'
-            },
-        ]
-
-        for config in plot_config:
-            data_frame = config['data_frame']
-            fig, ax = plt.subplots()
-
-            number_of_samples = self.fft_alpha_number_of_samples
-            data_frame_size = len(data_frame.index)
-            number_of_samples = data_frame_size if number_of_samples == -1 else number_of_samples
-            alpha = (1 / number_of_samples)
-            ffts = []
-
-            for start in range(0, number_of_samples):
-                df_subset = data_frame.iloc[:, 4:].iloc[start]
-                fft = list(df_subset)
-                x = list(range(len(fft)))
-                ffts.append(fft)
-
-                ax.plot(x, fft, alpha=alpha, color=self.colors['green'])
-                ax.set_ylim(self.get_config('plot', 'fft', 'ylim', default=None))
-
-            if self.args.save_plots:
-                self.save_figure(fig, 'fft_alpha_' + config['title'])
+            self.windows[window_key] = self.data_frame.loc[window_mask]
 
     def run_fft_median(self):
-        data_frame_start = self.data_frame_healthy.index[0]
-        data_frame_end = self.data_frame_healthy.index[-1]
-        data_frame_delta = data_frame_end - data_frame_start
-        data_frame_delta_quarter = data_frame_delta / 4
-        plot_config = [
-            {
-                'data_frame': self.data_frame_healthy,
-                'title': 'healthy-all'
-            },
-            {
-                'data_frame': self.data_frame_healthy.loc[data_frame_start:data_frame_start + data_frame_delta_quarter],
-                'title': 'healthy-1'
-            },
-            {
-                'data_frame': self.data_frame_healthy.loc[data_frame_start + data_frame_delta_quarter:data_frame_start + 2*data_frame_delta_quarter],
-                'title': 'healthy-2'
-            },
-            {
-                'data_frame': self.data_frame_healthy.loc[data_frame_start + 2*data_frame_delta_quarter:data_frame_start + 3*data_frame_delta_quarter],
-                'title': 'healthy-3'
-            },
-            {
-                'data_frame': self.data_frame_healthy.loc[data_frame_start + 3*data_frame_delta_quarter:data_frame_start + 4*data_frame_delta_quarter],
-                'title': 'healthy-4'
-            },
-            {
-                'data_frame': self.data_frame_anomalous,
-                'title': 'anomalous'
-            },
-        ]
+        for window_key, window_data_frame in self.windows.items():
+            data_frame_start = window_data_frame.index[0]
+            data_frame_end = window_data_frame.index[-1]
+            data_frame_splits = 4
+            data_frame_delta = (data_frame_end - data_frame_start) / data_frame_splits
+            plot_config = [
+                {
+                    'data_frame': window_data_frame,
+                    'title': f'{window_key}-fft-all'
+                },
+            ]
 
-        for rpm in self.get_config('plot', 'fft', 'rpm_plots', default=[]):
-            plot_config.append({
-                'data_frame': self.data_frame_healthy[self.data_frame_healthy.rpm == rpm],
-                'title': f'healthy-{rpm}-rpm',
-            })
-            plot_config.append({
-                'data_frame': self.data_frame_anomalous[self.data_frame_anomalous.rpm == rpm],
-                'title': f'anomalous-{rpm}-rpm',
-            })
+            for i in range(0, data_frame_splits):
+                plot_config.append({
+                    'data_frame': window_data_frame.loc[data_frame_start + i*data_frame_delta:data_frame_start + (i+1)*data_frame_delta],
+                    'title': f'{window_key}-fft-{i}',
+                })
 
-        for config in plot_config:
-            data_frame = config['data_frame']
-            title = config['title']
-            fft_list = []
+            for rpm in self.get_config('plot', 'fft', 'rpm_plots', default=[]):
+                plot_config.append({
+                    'data_frame': window_data_frame[window_data_frame.rpm == rpm],
+                    'title': f'{window_key}-fft-{rpm}-rpm',
+                })
+                plot_config.append({
+                    'data_frame': window_data_frame[window_data_frame.rpm == rpm],
+                    'title': f'{window_key}-fft-{rpm}-rpm',
+                })
 
-            for index, row in data_frame.iloc[:, 4:].iterrows():
-                fft = list(row)
-                fft_list.append(fft)
+            for config in plot_config:
+                data_frame = config['data_frame']
+                title = config['title']
+                fft_list = []
 
-            fft_data_frame = DataFrame(fft_list)
+                for index, row in data_frame.iloc[:, 4:].iterrows():
+                    fft = list(row)
+                    fft_list.append(fft)
 
-            plot_data_frame = DataFrame()
-            plot_data_frame['fft_median'] = fft_data_frame.median(axis=0)
+                fft_data_frame = DataFrame(fft_list)
 
-            self.plot(
-                plot_data_frame.index,
-                plot_data_frame['fft_median'],
-                xlabel='Frequency [Hz]',
-                ylabel='Amplitude',
-                title=f'FFT median ({title})',
-                ylim=self.get_config('plot', 'fft', 'ylim', default=None),
-                time_format=False
-            )
+                plot_data_frame = DataFrame()
+                plot_data_frame['fft_median'] = fft_data_frame.median(axis=0)
+
+                self.plot(
+                    plot_data_frame.index,
+                    plot_data_frame['fft_median'],
+                    xlabel='Frequency [Hz]',
+                    ylabel='Amplitude',
+                    title=f'FFT median ({title})',
+                    ylim=self.get_config('plot', 'fft', 'ylim', default=None),
+                    time_format=False,
+                    filename=f'{window_key}/{title}',
+                )
 
     def run_std(self):
         columns = ['rms', 'crest']
 
-        for column in columns:
-            self.stats_data_frame.loc[f'std_{column}', 'overall'] = self.data_frame[column].std()
-            self.stats_data_frame.loc[f'std_{column}', 'healthy'] = self.data_frame_healthy[column].std()
-            self.stats_data_frame.loc[f'std_{column}', 'anomalous'] = self.data_frame_anomalous[column].std()
+        for window_key, window_config in self.windows.items():
+            for column in columns:
+                self.stats_data_frame.loc[f'std_{column}', window_key] = self.windows[window_key][column].std()
 
-            self.data_frame[f'rolling_std_{column}'] = self.data_frame[column].rolling(window=self.rolling_window_size).std()
+                self.windows[window_key][f'rolling_std_{column}'] = self.windows[window_key][column].rolling(window=self.rolling_window_size).std()
 
-            self.plot(self.data_frame.index, self.data_frame[f'rolling_std_{column}'], ylabel=column, title=f'Standard Deviation {column}', show_screw_tightened=True)
+                self.plot(self.windows[window_key].index, self.windows[window_key][f'rolling_std_{column}'], ylabel=column, title=f'Standard Deviation {window_key}:{column}', show_screw_tightened=True)
 
     def run_mean(self):
         columns = ['rms', 'crest']
 
-        for column in columns:
-            self.stats_data_frame.loc[f'mean_{column}', 'overall'] = self.data_frame[column].mean()
-            self.stats_data_frame.loc[f'mean_{column}', 'healthy'] = self.data_frame_healthy[column].mean()
-            self.stats_data_frame.loc[f'mean_{column}', 'anomalous'] = self.data_frame_anomalous[column].mean()
+        for window_key, window_config in self.windows.items():
+            for column in columns:
+                self.stats_data_frame.loc[f'mean_{column}', window_key] = self.windows[window_key][column].mean()
 
-            self.data_frame[f'rolling_mean_{column}'] = self.data_frame[column].rolling(window=self.rolling_window_size).mean()
+                self.windows[window_key][f'rolling_mean_{column}'] = self.windows[window_key][column].rolling(window=self.rolling_window_size).mean()
 
-            self.plot(self.data_frame.index, self.data_frame[f'rolling_mean_{column}'], ylabel=column, title=f'Mean {column}', show_screw_tightened=True)
+                self.plot(self.windows[window_key].index, self.windows[window_key][f'rolling_mean_{column}'], ylabel=column, title=f'Mean {window_key}:{column}', show_screw_tightened=True)
 
     def run_data_collection_stats(self):
         total_values = len(self.data_frame.index)
@@ -348,8 +299,13 @@ class Explorer:
 
     def save_figure(self, figure, filename):
         sanitized_filename = filename.lower().replace(' ', '_').replace('(', '').replace(')', '')
+        out_path = os.path.join(self.out_folder, sanitized_filename + '.png')
+        out_dir = os.path.dirname(out_path)
 
-        figure.savefig(os.path.join(self.out_folder, sanitized_filename + '.png'), format='png')
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+
+        figure.savefig(out_path, format='png')
 
     def print_stats(self):
         print(tabulate(self.stats_data_frame, headers='keys', tablefmt='psql'))

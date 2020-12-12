@@ -1,0 +1,28 @@
+data:
+  path: ./data/raw/800rpm_gradual.csv
+  index_column: timestamp
+clean:
+  outliers:
+    rms:
+      max: 2
+    crest:
+      max: 25
+windows:
+  train:
+    start: 2020-12-10T09:00:00.000Z
+    end: 2020-12-10T13:00:00.000Z
+  test_healthy:
+    start: 2020-12-10T13:00:00.000Z
+    end: 2020-12-10T13:30:00.000Z
+  test_anomalous:
+    start: 2020-12-10T13:30:00.000Z
+    end: 2020-12-10T14:00:00.000Z
+  test_anomalous_1:
+    start: 2020-12-10T13:30:00.000Z
+    end: 2020-12-10T13:40:00.000Z
+  test_anomalous_2:
+    start: 2020-12-10T13:40:00.000Z
+    end: 2020-12-10T13:50:00.000Z
+  test_anomalous_3:
+    start: 2020-12-10T13:50:00.000Z
+    end: 2020-12-10T14:00:00.000Z

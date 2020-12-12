@@ -49,6 +49,8 @@ class Cleaner:
         if self.args.shift is not None:
             self.shift(data_frame, self.args.shift)
 
+        data_frame = self.remove_outliers(data_frame)
+
         if self.args.dry:
             pass
         else:
@@ -58,6 +60,19 @@ class Cleaner:
             data_frame.to_csv(out_path, date_format='%s.%f', float_format='%.8f')
 
         print('main: finished')
+
+    def remove_outliers(self, data_frame: DataFrame) -> DataFrame:
+        outlier_config = self.get_config('clean', 'outliers', default={})
+
+        for column_name, min_max in outlier_config.items():
+            min_value = min_max['min'] if 'min' in min_max else float('-inf')
+            max_value = min_max['max'] if 'max' in min_max else float('inf')
+
+            print(f'remove_outliers: removing outliers in column "{column_name}", with min="{min_value}" and max="{max_value}"')
+
+            data_frame = data_frame[data_frame[column_name].between(min_value, max_value)]
+
+        return data_frame
 
     def expand_fft(self, data_frame: DataFrame):
         if 'fft_magnitude' not in data_frame:

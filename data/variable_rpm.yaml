@@ -4,12 +4,15 @@ data:
   md5_hash: 5e4623a03a24ea0b1962260ed5823be0
 windows:
   train:
+    label: 0
     start: 2020-09-09T08:00:00.000Z
     end: 2020-09-09T16:00:00.000Z
   test_healthy:
+    label: 0
     start: 2020-09-09T16:00:00.000Z
     end: 2020-09-09T16:45:00.000Z
   test_anomalous:
+    label: 1
     start: 2020-09-09T16:45:00.000Z
     end: 2020-09-09T17:00:00.000Z
 plot:

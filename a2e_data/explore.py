@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas as pd
 import yaml
@@ -11,6 +12,9 @@ from pandas import DataFrame
 import ntpath
 from a2e_data.utility import get_recursive_config, str2bool
 from tabulate import tabulate
+
+
+mpl.rcParams['agg.path.chunksize'] = 10000
 
 
 class Explorer:

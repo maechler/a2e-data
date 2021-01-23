@@ -92,8 +92,12 @@ class Cleaner:
                 fft_by_frequency[fft_key].append(fft_value)
 
         del data_frame['fft_magnitude']
-        del data_frame['fft_start_frequency']
-        del data_frame['fft_end_frequency']
+
+        if 'fft_start_frequency' in data_frame:
+            del data_frame['fft_start_frequency']
+
+        if 'fft_end_frequency' in data_frame:
+            del data_frame['fft_end_frequency']
 
         for frequency in fft_by_frequency:
             data_frame[frequency] = fft_by_frequency[frequency]

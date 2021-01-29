@@ -22,6 +22,13 @@ plot:
   rpm:
     ylim: [0, 1500]
   crest:
-    ylim: [0, 25]
+    ylim: [5, 25]
   rms:
-    ylim: [0, 7]
+    ylim: [0, 4]
+  temperature:
+    ylim: [22, 42]
+  hist:
+    crest:
+      ylim: [ 5, 25 ]
+    rms:
+      ylim: [ 0, 4 ]

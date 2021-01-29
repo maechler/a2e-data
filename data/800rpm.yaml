@@ -3,6 +3,10 @@ data:
   index_column: timestamp
   md5_hash: 5694c7b13a5c04ee07cf2df4d5acec94
 windows:
+#  warmup:
+#    label: 0
+#    start: 2020-08-27T08:00:00.000Z
+#    end: 2020-08-27T09:00:00.000Z
   train:
     label: 0
     start: 2020-08-27T08:00:00.000Z
@@ -22,6 +26,8 @@ plot:
   rpm:
     ylim: [0, 1500]
   crest:
-    ylim: [0, 25]
+    ylim: [5, 25]
   rms:
-    ylim: [0, 7]
+    ylim: [0, 4]
+  temperature:
+    ylim: [22, 42]

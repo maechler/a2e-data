@@ -1,0 +1,10 @@
+data:
+  path: ./data/raw/400rpm_gradual.csv
+  index_column: timestamp
+windows:
+  train:
+    start: 2021-01-14T12:05:00.000Z
+    end: 2021-01-14T16:05:00.000Z
+  test_anomalous:
+    start: 2021-01-14T16:05:00.000Z
+    end: 2021-01-14T17:05:00.000Z

@@ -1,0 +1,13 @@
+data:
+  path: ./data/raw/400rpm_v2.csv
+  index_column: timestamp
+windows:
+  train:
+    start: 2021-01-25T09:00:00.000Z
+    end: 2021-01-25T13:00:00.000Z
+  test_healthy:
+    start: 2021-01-25T13:00:00.000Z
+    end: 2021-01-25T13:15:00.000Z
+  test_anomalous:
+    start: 2021-01-25T13:15:00.000Z
+    end: 2021-01-25T13:30:00.000Z

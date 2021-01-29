@@ -1,0 +1,27 @@
+data:
+  path: ./data/1200rpm_v2.csv
+  index_column: timestamp
+  md5_hash: 064f2139bbdd1bf2ade19914982a5f0f
+windows:
+  train:
+    label: 0
+    start: 2021-01-26T09:00:00.000Z
+    end: 2021-01-26T13:00:00.000Z
+  test_healthy:
+    label: 0
+    start: 2021-01-26T13:00:00.000Z
+    end: 2021-01-26T13:15:00.000Z
+  test_anomalous:
+    label: 1
+    start: 2021-01-26T13:15:00.000Z
+    end: 2021-01-26T13:30:00.000Z
+plot:
+  title: 1200 RPM
+  fft:
+    ylim: [0, 1]
+  rpm:
+    ylim: [0, 1500]
+  crest:
+    ylim: [0, 25]
+  rms:
+    ylim: [0, 7]

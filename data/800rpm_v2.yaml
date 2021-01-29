@@ -1,0 +1,27 @@
+data:
+  path: ./data/800rpm_v2.csv
+  index_column: timestamp
+  md5_hash: c2ea160e2a4753f6802953de85e7a8d8
+windows:
+  train:
+    label: 0
+    start: 2021-01-23T09:00:00.000Z
+    end: 2021-01-23T13:00:00.000Z
+  test_healthy:
+    label: 0
+    start: 2021-01-23T13:00:00.000Z
+    end: 2021-01-23T13:15:00.000Z
+  test_anomalous:
+    label: 1
+    start: 2021-01-23T13:15:00.000Z
+    end: 2021-01-23T13:30:00.000Z
+plot:
+  title: 800 RPM
+  fft:
+    ylim: [0, 1]
+  rpm:
+    ylim: [0, 1500]
+  crest:
+    ylim: [0, 25]
+  rms:
+    ylim: [0, 7]

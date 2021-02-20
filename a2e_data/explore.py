@@ -62,6 +62,7 @@ class Explorer:
         plt.style.use(style_path)
 
         self.run_overview()
+        self.run_hist()
         self.run_closeup()
         self.run_fft_median()
         self.run_std()
@@ -92,7 +93,7 @@ class Explorer:
         ax.set_xlabel(xlabel, labelpad=15)
         ax.set_ylabel(ylabel, labelpad=15)
 
-        if title is not None:
+        if title is not None and self.args.show_title:
             ax.set_title(self.get_plot_title(title))
 
         if xlim is not None:
@@ -132,10 +133,10 @@ class Explorer:
         self.plot(
             self.data_frame.index,
             self.data_frame['temperature'],
-            title='Temperature',
+            title='temperature',
             color=self.colors['orange'],
             ylim=self.get_config('plot', 'temperature', 'ylim', default=None),
-            ylabel='Temperature [°C]',
+            ylabel='temperature [°C]',
             show_screw_tightened=True
         )
 
@@ -149,10 +150,40 @@ class Explorer:
             show_screw_tightened=True
         )
 
+    def run_hist(self):
+        columns = ['rms', 'crest']
+
+        for window_key, window_config in self.windows.items():
+            for column in columns:
+                fig, ax = plt.subplots()
+                # ylim of line plot corresponds to xlim in histogram
+                xlim = self.get_config('plot', column, 'ylim', default=None)
+                window_mean = self.windows[window_key][column].mean()
+                window_std = self.windows[window_key][column].std()
+
+                ax.hist(
+                    self.windows[window_key][column].values,
+                    bins=40,
+                    histtype='bar',
+                    range=xlim,
+                )
+
+                ax.axvline(x=window_mean, color='black', linestyle='solid', label=f'mean={"{:.2f}".format(window_mean)}')
+                ax.axvline(x=window_mean + window_std, color='black', linestyle='dotted')
+                ax.axvline(x=window_mean - window_std, color='black', linestyle='dotted', label=f'std={"{:.2f}".format(window_std)}')
+
+                ax.set_xlabel(column.upper(), labelpad=15)
+
+                ax.set_xlim(xlim)
+
+                ax.legend()
+
+                self.save_figure(fig, f'hist_{column}_{window_key}')
+
     def run_closeup(self):
         anomalous_start = self.get_config('windows', 'test_anomalous', 'start')
-        xlim_start = anomalous_start - timedelta(minutes=1)
-        xlim_end = anomalous_start + timedelta(minutes=1)
+        xlim_start = anomalous_start - timedelta(minutes=2.5)
+        xlim_end = anomalous_start + timedelta(minutes=2.5)
 
         self.plot(
             self.data_frame.index,
@@ -194,6 +225,8 @@ class Explorer:
             window_mask = (self.data_frame.index > window_start) & (self.data_frame.index <= window_end)
 
             self.windows[window_key] = self.data_frame.loc[window_mask]
+
+        self.windows['all'] = self.data_frame.copy()
 
     def run_fft_median(self):
         for window_key, window_data_frame in self.windows.items():
@@ -258,7 +291,7 @@ class Explorer:
 
                 self.windows[window_key][f'rolling_std_{column}'] = self.windows[window_key][column].rolling(window=self.rolling_window_size).std()
 
-                self.plot(self.windows[window_key].index, self.windows[window_key][f'rolling_std_{column}'], ylabel=column, title=f'Standard Deviation {window_key}:{column}', show_screw_tightened=True)
+                self.plot(self.windows[window_key].index, self.windows[window_key][f'rolling_std_{column}'], ylabel=column, title=f'Standard Deviation {window_key}_{column}', show_screw_tightened=True)
 
     def run_mean(self):
         columns = ['rms', 'crest']
@@ -269,7 +302,7 @@ class Explorer:
 
                 self.windows[window_key][f'rolling_mean_{column}'] = self.windows[window_key][column].rolling(window=self.rolling_window_size).mean()
 
-                self.plot(self.windows[window_key].index, self.windows[window_key][f'rolling_mean_{column}'], ylabel=column, title=f'Mean {window_key}:{column}', show_screw_tightened=True)
+                self.plot(self.windows[window_key].index, self.windows[window_key][f'rolling_mean_{column}'], ylabel=column, title=f'Mean {window_key}_{column}', show_screw_tightened=True)
 
     def run_data_collection_stats(self):
         total_values = len(self.data_frame.index)
@@ -278,28 +311,50 @@ class Explorer:
         total_seconds = (end_date - start_date).total_seconds()
         computed_frequency = "{:.2f}Hz".format(total_values / total_seconds)
 
-        grouped_rms_values = len(self.data_frame.groupby(['rms']))
-        duplicated_rms_rows = total_values - grouped_rms_values
+        rms_data_frame = self.data_frame.copy()
+        self.drop_adjacent_duplicates(rms_data_frame, ['rms'])
+        unique_rms_rows = len(rms_data_frame)
+        duplicated_rms_rows = total_values - unique_rms_rows
         duplicated_rms_percentage = "{:.2f}%".format((duplicated_rms_rows / total_values) * 100)
 
-        grouped_crest_values = len(self.data_frame.groupby(['crest']))
-        duplicated_crest_rows = total_values - grouped_crest_values
+        crest_data_frame = self.data_frame.copy()
+        self.drop_adjacent_duplicates(crest_data_frame, ['crest'])
+        unique_crest_rows = len(crest_data_frame)
+        duplicated_crest_rows = total_values - unique_crest_rows
         duplicated_crest_percentage = "{:.2f}%".format((duplicated_crest_rows / total_values) * 100)
 
-        grouped_fft_values = len(self.data_frame.groupby(['fft_1', 'fft_2', 'fft_3']))
-        duplicated_fft_rows = total_values - grouped_fft_values
+        fft_data_frame = self.data_frame.copy()
+        self.drop_adjacent_duplicates(fft_data_frame, ['fft_1', 'fft_2', 'fft_3'])
+        unique_fft_rows = len(fft_data_frame)
+        duplicated_fft_rows = total_values - unique_fft_rows
         duplicated_fft_percentage = "{:.2f}%".format((duplicated_fft_rows / total_values) * 100)
 
         with open(os.path.join(self.out_folder, 'data_collection_stats.txt'), 'w') as file:
             file.write(f'Total seconds: {total_seconds} \n')
             file.write(f'Total rows: {total_values} \n')
             file.write(f'Computed ferquency: {computed_frequency} \n')
+            file.write(f'Unique RMS rows: {unique_rms_rows} \n')
             file.write(f'Duplicated RMS rows: {duplicated_rms_rows} \n')
             file.write(f'Duplicated RMS percentage: {duplicated_rms_percentage} \n')
+            file.write(f'Unique CREST rows: {unique_crest_rows} \n')
             file.write(f'Duplicated CREST rows: {duplicated_crest_rows} \n')
             file.write(f'Duplicated CREST percentage: {duplicated_crest_percentage} \n')
+            file.write(f'Unique FFT rows: {unique_fft_rows} \n')
             file.write(f'Duplicated FFT rows: {duplicated_fft_rows} \n')
             file.write(f'Duplicated FFT percentage: {duplicated_fft_percentage} \n')
+
+    def drop_adjacent_duplicates(self, data_frame: DataFrame, columns: list):
+        previous_row = None
+        indexes_to_drop = []
+
+        for index, row in data_frame.iterrows():
+            if previous_row is not None:
+                if previous_row[columns].equals(row[columns]):
+                    indexes_to_drop.append(index)
+
+            previous_row = row
+
+        data_frame.drop(index=indexes_to_drop, inplace=True)
 
     def save_figure(self, figure, filename):
         sanitized_filename = filename.lower().replace(' ', '_').replace('(', '').replace(')', '')
@@ -329,6 +384,7 @@ if __name__ == '__main__':
     parser.add_argument('--config', help='Path to a YAML file describing the dataset.', type=str, required=True)
     parser.add_argument('--show_plots', help='Whether to show plots or not.', type=str2bool, default=True)
     parser.add_argument('--save_plots', help='Whether to save plots to file system or not.', type=str2bool, default=True)
+    parser.add_argument('--show_title', help='Whether to render plot titles or not.', type=str2bool, default=True)
 
     args = parser.parse_args()
     explorer = Explorer(args)

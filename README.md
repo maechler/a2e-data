@@ -1,4 +1,23 @@
-# Auto2Encoder data exploration
+# a2e-data repository
+
+This repository contains several data sets collected with a test machine setup 
+consisting of a motor, a bearing, a screw to put pressure onto the bearing and a temperature and acceleration sensor.
+
+This repository requires [git-lfs](https://git-lfs.github.com/) to be installed.
+
+## Insights
+
+## Setup
+
+![Setup](./images/setup.png)
+
+## RMS
+
+![RMS](./images/rms.png)
+
+## Frequency Spectrum
+
+![FFT](./images/fft.png)
 
 ## Development
 
